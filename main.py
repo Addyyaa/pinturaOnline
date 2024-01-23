@@ -2,11 +2,19 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
+import re
 
 # 先输入登入信息
 # 获取用户要检测的屏幕组
 # 查询接口获取屏幕列表以及在线状态
 # 设备状态发生变化发送邮件，在线变离线发送离线提醒，离线变在线发送上线提醒
+
+def is_valid_email(email):
+    email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    if email_pattern.match(email):
+        return True
+    else:
+        return False
 
 # 校验账号是邮箱还是手机号
 def check_account(account):
