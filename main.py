@@ -7,8 +7,13 @@ from email.mime.application import MIMEApplication
 # 获取用户要检测的屏幕组
 # 查询接口获取屏幕列表以及在线状态
 # 设备状态发生变化发送邮件，在线变离线发送离线提醒，离线变在线发送上线提醒
-def login():
+
+# 校验账号是邮箱还是手机号
+def check_account(account):
     pass
+def login():
+    while True:
+        account = input('请输入账号：')
 
 def get_screen_list():
     pass
