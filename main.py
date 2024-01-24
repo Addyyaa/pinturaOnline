@@ -6,7 +6,7 @@ import phonenumbers
 import re
 import requests
 import json
-import msvcrt
+import traceback
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 13; M2104K10AC Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.210 Mobile Safari/537.36 uni-app Html5Plus/1.0 (Immersed/34.909092)",
@@ -16,12 +16,16 @@ headers = {
     "Accept-Encoding": "gzip"
 }
 server = ""
+groupid = ""
 
 
-# 先输入登入信息
-# 获取用户要检测的屏幕组
-# 查询接口获取屏幕列表以及在线状态
-# 设备状态发生变化发送邮件，在线变离线发送离线提醒，离线变在线发送上线提醒
+def log_exception(exception):
+    # 将异常信息写入文件
+    with open('D:/exception_log.txt', 'a') as f:
+        f.write("Exception Type: {}\n".format(type(exception).__name__))
+        f.write("Exception Value: {}\n".format(exception))
+        f.write("Traceback:\n")
+        traceback.print_exc(file=f)
 
 def is_valid_email(email):
     email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
@@ -30,6 +34,48 @@ def is_valid_email(email):
     else:
         return False
 
+def send_email(subject="Pintura：您的设备离线啦！", message=""):
+    # 邮件配置信息
+    smtp_server = 'smtp.qq.com'
+    smtp_port = 587  # 一般为587或465
+    smtp_username = '2698567570@qq.com'
+    smtp_password = 'ruppilfmltsjdgbj'
+    sender_email = '2698567570@qq.com'
+    receiver_email = '2698567570@qq.com'
+    # 邮件正文
+    body = message
+
+    # 创建邮件对象
+    message = MIMEMultipart()
+    message['From'] = sender_email
+    message['To'] = receiver_email
+    message['Subject'] = subject
+
+    # 添加邮件正文
+    message.attach(MIMEText(body, 'plain'))
+
+    # 如果需要附件，可以添加附件
+    # attachment = open('file.txt', 'rb')
+    # attach_part = MIMEApplication(attachment.read(), Name='file.txt')
+    # attachment.close()
+    # attach_part['Content-Disposition'] = 'attachment; filename="file.txt"'
+    # message.attach(attach_part)
+
+    # 连接到 SMTP 服务器并发送邮件
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            # 开启 TLS 连接
+            server.starttls()
+
+            # 登录邮箱
+            server.login(smtp_username, smtp_password)
+
+            # 发送邮件
+            server.sendmail(sender_email, receiver_email, message.as_string())
+
+        print('Email sent successfully.')
+    except Exception as e:
+        print(f'Error: {e}')
 
 def phone_number_format_validation(phone):
     try:
@@ -115,7 +161,7 @@ def login():
                     data['loginType'] = '2'
                     break
                 else:
-                    print('账号格式不正确,请重新输入！')
+                    print('账号格式不正确,请重新输入！如果账号为手机号，需要携带区号，如：8612345678901')
                     continue
             else:
                 print('账号不能为空,请重新输入！')
@@ -150,63 +196,59 @@ def get_groupid():
     response = response.json()
     data = response['data']['group']
     screen_group = []
+    group_id = []
     for i in data:
         screen_group.append(i['name'])
+        group_id.append(i['id'])
     message = ""
     for index, value in enumerate(screen_group):
         message += str(index + 1) + "： " + value + "\n"
-    group_id = input(f"请选择要监视的屏幕组：\n{message}")
+    while True:
+        selection_id = input(f"请选择要监视的屏幕组：\n{message}")
+        try:
+            selection_id = int(selection_id) -1
+            break
+        except ValueError:
+            print("输入无效，请输入数字选项！")
+    selection_id = group_id[selection_id]
+    global groupid
+    groupid = str(selection_id)
+    print("即将进入检测模式")
 
 
 def get_screen_list():
-    pass
-
+    screen_list_interface = 'http://' + server + '/api/v1/host/screen/group/list/relation?screenGroupId=' + groupid
+    response = requests.get(screen_list_interface, headers=headers)
+    response = response.json()
+    data = response['data']
+    screens = {}
+    offline_screens = []
+    for i in data:
+        screens[f'{i["screenId"]}'] = i['status']
+    for key, value in screens.items():
+        if value == 2:
+            offline_screens.append(key)
+    return offline_screens
 
 def check_online():
-    pass
+    get_groupid()
+    last_offline_screens = []
+    while True:
+        print("检测中.", end="\r")
+        print("检测中..", end='\r')
+        print("检测中...", end='\r')
+        offline_screen_list = get_screen_list()
+        if offline_screen_list:
+            if offline_screen_list and offline_screen_list != last_offline_screens:
+                print('发现离线屏幕：\n', offline_screen_list)
+                message = f"发现离线屏幕：\n{offline_screen_list}"
+                send_email(message=message)
+                last_offline_screens = offline_screen_list
+        else:
+            last_offline_screens = []
 
 
-# # 邮件配置信息
-# smtp_server = 'smtp.qq.com'
-# smtp_port = 587  # 一般为587或465
-# smtp_username = '2698567570@qq.com'
-# smtp_password = 'ruppilfmltsjdgbj'
-# sender_email = '2698567570@qq.com'
-# receiver_email = '2698567570@qq.com'
-# subject = 'Test Email'
-#
-# # 邮件正文
-# body = '你的设备离线啦！.'
-#
-# # 创建邮件对象
-# message = MIMEMultipart()
-# message['From'] = sender_email
-# message['To'] = receiver_email
-# message['Subject'] = subject
-#
-# # 添加邮件正文
-# message.attach(MIMEText(body, 'plain'))
-#
-# # 如果需要附件，可以添加附件
-# # attachment = open('file.txt', 'rb')
-# # attach_part = MIMEApplication(attachment.read(), Name='file.txt')
-# # attachment.close()
-# # attach_part['Content-Disposition'] = 'attachment; filename="file.txt"'
-# # message.attach(attach_part)
-#
-# # 连接到 SMTP 服务器并发送邮件
-# try:
-#     with smtplib.SMTP(smtp_server, smtp_port) as server:
-#         # 开启 TLS 连接
-#         server.starttls()
-#
-#         # 登录邮箱
-#         server.login(smtp_username, smtp_password)
-#
-#         # 发送邮件
-#         server.sendmail(sender_email, receiver_email, message.as_string())
-#
-#     print('Email sent successfully.')
-# except Exception as e:
-#     print(f'Error: {e}')
-get_groupid()
+try:
+    check_online()
+except Exception as e:
+    log_exception(e)
