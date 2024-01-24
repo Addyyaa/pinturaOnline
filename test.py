@@ -1,14 +1,25 @@
+import threading
 import time
 
-def print_after_previous_line(text):
-    # 使用 ANSI 转义码清除光标位置到行尾的内容
-    print('\033[K' + text)
+def print_message(message):
+    print(message)
 
-# 示例
+def thread_function_1():
+    for _ in range(5):
+        print_message("Thread 1")
+        time.sleep(1)
 
-    # 在之前的打印信息后面输出
-print('Hello, World!')
-for i in range(4):
-    print_after_previous_line('Hello, World!')
-    time.sleep(1)
+def thread_function_2():
+    for _ in range(5):
+        print_message("Thread 2")
+        time.sleep(1)
 
+if __name__ == "__main__":
+    thread1 = threading.Thread(target=thread_function_1)
+    thread2 = threading.Thread(target=thread_function_2)
+
+    thread1.start()
+    thread2.start()
+
+    thread1.join()
+    thread2.join()

@@ -1,4 +1,5 @@
 import smtplib
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
@@ -7,6 +8,7 @@ import re
 import requests
 import json
 import traceback
+import sys
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 13; M2104K10AC Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.210 Mobile Safari/537.36 uni-app Html5Plus/1.0 (Immersed/34.909092)",
@@ -233,8 +235,15 @@ def get_screen_list():
 def check_online():
     get_groupid()
     last_offline_screens = []
-    print('检测中...')
+    print('\n' * 5, '\033[1;31;40m 按 Ctrl + C 退出程序 \033[m')
+    msg = '检测中...'
     while True:
+        sys.stdout.write('\r' + " " * len(msg))
+        sys.stdout.flush()
+        time.sleep(0.5)
+        sys.stdout.write('\r' + msg)
+        sys.stdout.flush()
+        time.sleep(0.5)
         offline_screen_list = get_screen_list()
         if offline_screen_list:
             if offline_screen_list and offline_screen_list != last_offline_screens:
