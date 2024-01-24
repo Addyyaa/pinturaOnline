@@ -233,10 +233,8 @@ def get_screen_list():
 def check_online():
     get_groupid()
     last_offline_screens = []
+    print('检测中...')
     while True:
-        print("检测中.", end="\r")
-        print("检测中..", end='\r')
-        print("检测中...", end='\r')
         offline_screen_list = get_screen_list()
         if offline_screen_list:
             if offline_screen_list and offline_screen_list != last_offline_screens:
