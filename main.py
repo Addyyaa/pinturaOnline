@@ -8,6 +8,14 @@ import requests
 import json
 import msvcrt
 
+headers = {
+        "User-Agent": "Mozilla/5.0 (Linux; Android 13; M2104K10AC Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.210 Mobile Safari/537.36 uni-app Html5Plus/1.0 (Immersed/34.909092)",
+        "Content-Type": "application/json",
+        "Content-Length": "78",
+        "Connection": "Keep-Alive",
+        "Accept-Encoding": "gzip"
+    }
+
 # 先输入登入信息
 # 获取用户要检测的屏幕组
 # 查询接口获取屏幕列表以及在线状态
@@ -41,12 +49,12 @@ def check_account(account):
     if is_valid_email(account):
         account_type = 'email'
         return account_type
-    elif phone_number_format_validation(account):
+    elif phone_number := phone_number_format_validation(account):
         account_type = 'phone'
-        phone_number = phone_number_format_validation(account)
         return account_type, phone_number
     else:
         return False
+
 
 def check_password(passwd):
     # 检查长度是否在6-12之间
@@ -69,13 +77,7 @@ def login():
         "areaCode": None,
         "loginType": None
     }
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Linux; Android 13; M2104K10AC Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.210 Mobile Safari/537.36 uni-app Html5Plus/1.0 (Immersed/34.909092)",
-        "Content-Type": "application/json",
-        "Content-Length": "78",
-        "Connection": "Keep-Alive",
-        "Accept-Encoding": "gzip"
-    }
+
     while True:
         area = input("请选择地区：\n1. 中国-测试环境\n2. 中国-正式环境\n3. 美国-测试环境\n4. 美国-正式环境\n")
         if area == '1':
@@ -97,7 +99,21 @@ def login():
         while True:
             account = input('请输入账号：')
             if account != "":
-                break
+                account_result = check_account(account)
+                # 邮箱登录
+                if isinstance(account_result, str):
+                    data['account'] = account
+                    data['loginType'] = '3'
+                    data.pop('areaCode')
+                    break
+                # 手机登录
+                elif isinstance(account_result, tuple) and account_result[0] == 'phone':
+                    data['account'] = account_result[1]
+                    data['loginType'] = '2'
+                    break
+                else:
+                    print('账号格式不正确,请重新输入！')
+                    continue
             else:
                 print('账号不能为空,请重新输入！')
         while True:
@@ -108,20 +124,7 @@ def login():
                 break
             else:
                 continue
-        account_result = check_account(account)
-        # 邮箱登录
-        if isinstance(account_result, str):
-            data['account'] = account
-            data['loginType'] = '3'
-            data.pop('areaCode')
-            data['password'] = passwd
-        # 手机登录
-        elif isinstance(account_result, tuple) and account_result[0] == 'phone':
-            data['account'] = account_result[1]
-            data['loginType'] = '2'
-            data['password'] = passwd
-        else:
-            print('账号格式不正确,请重新输入！')
+
         data_tmp = json.dumps(data)
         response = requests.post(login_interface, data=data_tmp, headers=headers)
         response = response.json()
@@ -133,9 +136,8 @@ def login():
         else:
             print(message)
 
-
-
-
+def get_groupid():
+    pass
 
 
 def get_screen_list():
@@ -144,6 +146,7 @@ def get_screen_list():
 
 def check_online():
     pass
+
 
 # # 邮件配置信息
 # smtp_server = 'smtp.qq.com'
