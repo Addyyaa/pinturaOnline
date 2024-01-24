@@ -9,12 +9,14 @@ import json
 import msvcrt
 
 headers = {
-        "User-Agent": "Mozilla/5.0 (Linux; Android 13; M2104K10AC Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.210 Mobile Safari/537.36 uni-app Html5Plus/1.0 (Immersed/34.909092)",
-        "Content-Type": "application/json",
-        "Content-Length": "78",
-        "Connection": "Keep-Alive",
-        "Accept-Encoding": "gzip"
-    }
+    "User-Agent": "Mozilla/5.0 (Linux; Android 13; M2104K10AC Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.210 Mobile Safari/537.36 uni-app Html5Plus/1.0 (Immersed/34.909092)",
+    "Content-Type": "application/json",
+    "Content-Length": "78",
+    "Connection": "Keep-Alive",
+    "Accept-Encoding": "gzip"
+}
+server = ""
+
 
 # 先输入登入信息
 # 获取用户要检测的屏幕组
@@ -80,6 +82,7 @@ def login():
 
     while True:
         area = input("请选择地区：\n1. 中国-测试环境\n2. 中国-正式环境\n3. 美国-测试环境\n4. 美国-正式环境\n")
+        global server
         if area == '1':
             server = '139.224.192.36:8082'
             data['areaCode'] = '+86'
@@ -136,8 +139,23 @@ def login():
         else:
             print(message)
 
+
 def get_groupid():
-    pass
+    cookie = login()
+    group_interface = 'http://' + server + '/api/v1/host/screen/group/device/list'
+    global headers
+    headers['X-TOKEN'] = cookie
+    headers['Content-Type'] = 'application/json, text/plain, */*'
+    response = requests.get(group_interface, headers=headers)
+    response = response.json()
+    data = response['data']['group']
+    screen_group = []
+    for i in data:
+        screen_group.append(i['name'])
+    message = ""
+    for index, value in enumerate(screen_group):
+        message += str(index + 1) + "： " + value + "\n"
+    group_id = input(f"请选择要监视的屏幕组：\n{message}")
 
 
 def get_screen_list():
@@ -191,4 +209,4 @@ def check_online():
 #     print('Email sent successfully.')
 # except Exception as e:
 #     print(f'Error: {e}')
-login()
+get_groupid()
