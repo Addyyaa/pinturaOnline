@@ -2,7 +2,11 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
+import phonenumbers
 import re
+import requests
+import json
+import msvcrt
 
 # 先输入登入信息
 # 获取用户要检测的屏幕组
@@ -16,21 +20,130 @@ def is_valid_email(email):
     else:
         return False
 
+
+def phone_number_format_validation(phone):
+    try:
+        parsed_number = phonenumbers.parse(f'+{phone}')
+        is_valid_number = phonenumbers.is_valid_number(parsed_number)
+        phone_number = phonenumbers.format_number(parsed_number, phonenumbers.PhoneNumberFormat.E164)
+        if is_valid_number:
+            print(f"号码：{phone_number}校验通过")
+            return phone_number[len(str(parsed_number.country_code)) + 1:]
+        else:
+            print(f"号码：{phone}校验失败")
+            return False
+    except phonenumbers.NumberParseException as e:
+        print(f"号码解析异常,请确认是否输入区号{e}")
+
+
 # 校验账号是邮箱还是手机号
 def check_account(account):
-    pass
+    if is_valid_email(account):
+        account_type = 'email'
+        return account_type
+    elif phone_number_format_validation(account):
+        account_type = 'phone'
+        phone_number = phone_number_format_validation(account)
+        return account_type, phone_number
+    else:
+        return False
+
+def check_password(passwd):
+    # 检查长度是否在6-12之间
+    if 6 <= len(passwd) <= 12:
+        # 检查是否由字母和数字组成
+        if passwd.isalnum():
+            return passwd
+        else:
+            print("输入必须由字母和数字组成，请重新输入。")
+            return False
+    else:
+        print("输入长度不符合要求，请重新输入。")
+        return False
+
+
 def login():
+    data = {
+        "account": None,
+        "password": None,
+        "areaCode": None,
+        "loginType": None
+    }
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Linux; Android 13; M2104K10AC Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.210 Mobile Safari/537.36 uni-app Html5Plus/1.0 (Immersed/34.909092)",
+        "Content-Type": "application/json",
+        "Content-Length": "78",
+        "Connection": "Keep-Alive",
+        "Accept-Encoding": "gzip"
+    }
     while True:
-        account = input('请输入账号：')
+        area = input("请选择地区：\n1. 中国-测试环境\n2. 中国-正式环境\n3. 美国-测试环境\n4. 美国-正式环境\n")
+        if area == '1':
+            server = '139.224.192.36:8082'
+            data['areaCode'] = '+86'
+        elif area == '2':
+            server = 'cloud-service.austinelec.com:8080'
+            data['areaCode'] = '+86'
+        elif area == '3':
+            server = '52.53.201.220:8080'
+            data['areaCode'] = '+1'
+        elif area == '4':
+            server = '52.53.201.220:8080'
+            data['areaCode'] = '+1'
+        else:
+            print('地区输入错误,请重新输入！')
+            continue
+        login_interface = 'http://' + server + '/api/v1/account/login'
+        while True:
+            account = input('请输入账号：')
+            if account != "":
+                break
+            else:
+                print('账号不能为空,请重新输入！')
+        while True:
+            passwd = input('请输入密码：')
+            result = check_password(passwd)
+            if isinstance(result, str):
+                data['password'] = result
+                break
+            else:
+                continue
+        account_result = check_account(account)
+        # 邮箱登录
+        if isinstance(account_result, str):
+            data['account'] = account
+            data['loginType'] = '3'
+            data.pop('areaCode')
+            data['password'] = passwd
+        # 手机登录
+        elif isinstance(account_result, tuple) and account_result[0] == 'phone':
+            data['account'] = account_result[1]
+            data['loginType'] = '2'
+            data['password'] = passwd
+        else:
+            print('账号格式不正确,请重新输入！')
+        data_tmp = json.dumps(data)
+        response = requests.post(login_interface, data=data_tmp, headers=headers)
+        response = response.json()
+        message = response['message']
+        cookie = response['data']
+        if message == '成功':
+            print('登录成功')
+            return cookie
+        else:
+            print(message)
+
+
+
+
+
 
 def get_screen_list():
     pass
 
+
 def check_online():
     pass
-
-
-
 
 # # 邮件配置信息
 # smtp_server = 'smtp.qq.com'
@@ -75,3 +188,4 @@ def check_online():
 #     print('Email sent successfully.')
 # except Exception as e:
 #     print(f'Error: {e}')
+login()
