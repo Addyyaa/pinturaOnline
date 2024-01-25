@@ -21,8 +21,7 @@ def batch_compress_images(input_folder, output_folder, target_resolution):
         output_path = os.path.join(output_folder, jpg_file)
         compress_image(input_path, output_path, target_resolution)
     print("压缩完成，请到out文件夹下查看图片")
-    current_path = os.path.dirname(os.path.abspath(__file__))
-    outputpath = current_path + "/output"
+    outputpath = 'output'
     os.startfile(outputpath)
 
 # 例子：将当前目录下所有 JPG 文件压缩到分辨率 (1080, 1920) 并保存到 output 文件夹
