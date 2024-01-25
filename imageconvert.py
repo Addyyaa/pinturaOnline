@@ -1,4 +1,6 @@
 import os
+import sys
+
 from PIL import Image
 
 def compress_image(input_path, output_path, target_resolution):
@@ -22,6 +24,16 @@ def batch_compress_images(input_folder, output_folder, target_resolution):
 # 例子：将当前目录下所有 JPG 文件压缩到分辨率 (1080, 1920) 并保存到 output 文件夹
 input_folder = "."
 output_folder = "output"
-target_resolution = (1080, 1920)
-
+while True:
+    try:
+        width = input("请输入转换后的宽分辨率：")
+        width = int(width)
+        height = input("请输入转换后的高分辨率：")
+        height = int(height)
+    except ValueError:
+        print("输入无效，请重新输入")
+        continue
+    if isinstance(width, int) and isinstance(height, int):
+        target_resolution = (width, height)
+        break
 batch_compress_images(input_folder, output_folder, target_resolution)
