@@ -176,6 +176,7 @@ def login():
 
         data_tmp = json.dumps(data)
         response = requests.post(login_interface, data=data_tmp, headers=headers)
+        response.close()
         response = response.json()
         message = response['message']
         cookie = response['data']
@@ -195,6 +196,7 @@ def get_groupid():
     try:
         response = requests.get(group_interface, headers=headers, timeout=(5, 10))
         response.raise_for_status()  # 检查是否有错误状态码
+        response.close()
         # 处理响应数据
         response = response.json()
         data = response['data']['group']
@@ -229,6 +231,7 @@ def get_groupid():
 def get_screen_list():
     screen_list_interface = 'http://' + server + '/api/v1/host/screen/group/list/relation?screenGroupId=' + groupid
     response = requests.get(screen_list_interface, headers=headers)
+    response.close()
     response = response.json()
     data = response['data']
     screens = {}
