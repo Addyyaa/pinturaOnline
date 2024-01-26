@@ -21,7 +21,7 @@ groupid = ""
 
 def log_exception(exception):
     # 将异常信息写入文件
-    with open('D:/exception_log.txt', 'a') as f:
+    with open('exception_log.txt', 'w') as f:
         f.write("Exception Type: {}\n".format(type(exception).__name__))
         f.write("Exception Value: {}\n".format(exception))
         f.write("Traceback:\n")
@@ -175,9 +175,13 @@ def login():
                 continue
 
         data_tmp = json.dumps(data)
-        response = requests.post(login_interface, data=data_tmp, headers=headers)
-        response.close()
-        response = response.json()
+        try:
+            response = requests.post(login_interface, data=data_tmp, headers=headers)
+            response.close()
+            response = response.json()
+        except Exception as e:
+            print(e)
+
         message = response['message']
         cookie = response['data']
         if message == '成功':
@@ -223,25 +227,29 @@ def get_groupid():
         print("请求超时,程序即将退出")
         time.sleep(2)
         sys.exit()
-    except requests.RequestException as e:
+    except Exception as e:
         print(f"请求发生错误: {e}")
 
 
 
 def get_screen_list():
-    screen_list_interface = 'http://' + server + '/api/v1/host/screen/group/list/relation?screenGroupId=' + groupid
-    response = requests.get(screen_list_interface, headers=headers)
-    response.close()
-    response = response.json()
-    data = response['data']
-    screens = {}
-    offline_screens = []
-    for i in data:
-        screens[f'{i["screenId"]}'] = i['status']
-    for key, value in screens.items():
-        if value == 2:
-            offline_screens.append(key)
-    return offline_screens
+    try:
+        screen_list_interface = 'http://' + server + '/api/v1/host/screen/group/list/relation?screenGroupId=' + groupid
+        response = requests.get(screen_list_interface, headers=headers)
+        response.close()
+        response = response.json()
+        data = response['data']
+        screens = {}
+        offline_screens = []
+        for i in data:
+            screens[f'{i["screenId"]}'] = i['status']
+        for key, value in screens.items():
+            if value == 2:
+                offline_screens.append(key)
+        return offline_screens
+    except Exception as e:
+        log_exception(e)
+
 
 def check_online():
     get_groupid()
