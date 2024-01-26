@@ -30,11 +30,11 @@ def image_process(is_stretch, image_path):
             width = 1200
             height = 1920
     else:  # 不做拉伸，但限制最大值
-        if width > height and width > 1920:
+        if width > height and width >= 1920:
             width = 1920
             if height > 1200:
                 height = 1200
-        elif width <= height and height > 1920:
+        elif width <= height and height >= 1920:
             height = 1920
             if width > 1200:
                 width = 1200
@@ -66,6 +66,9 @@ def process_all_images(is_stretch):
 
         if target_resolution is not None:
             compress_image(image_path, target_resolution)
+
+    outputpath = 'output'
+    os.startfile(outputpath)
 
 if __name__ == "__main__":
     while True:
