@@ -11,11 +11,9 @@ import traceback
 import sys
 
 headers = {
-    "User-Agent": "Mozilla/5.0 (Linux; Android 13; M2104K10AC Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.210 Mobile Safari/537.36 uni-app Html5Plus/1.0 (Immersed/34.909092)",
     "Content-Type": "application/json",
-    "Content-Length": "78",
-    "Connection": "Keep-Alive",
-    "Accept-Encoding": "gzip"
+    "Accept-Encoding": "gzip",
+    "user-agent": "Mozilla/5.0 (Linux; Android 13; M2104K10AC Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/115.0.5790.166 Mobile Safari/537.36 uni-app Html5Plus/1.0 (Immersed/34.909092)",
 }
 server = ""
 groupid = ""
@@ -194,28 +192,38 @@ def get_groupid():
     global headers
     headers['X-TOKEN'] = cookie
     headers['Content-Type'] = 'application/json, text/plain, */*'
-    response = requests.get(group_interface, headers=headers)
-    response = response.json()
-    data = response['data']['group']
-    screen_group = []
-    group_id = []
-    for i in data:
-        screen_group.append(i['name'])
-        group_id.append(i['id'])
-    message = ""
-    for index, value in enumerate(screen_group):
-        message += str(index + 1) + "： " + value + "\n"
-    while True:
-        selection_id = input(f"请选择要监视的屏幕组：\n{message}")
-        try:
-            selection_id = int(selection_id) -1
-            break
-        except ValueError:
-            print("输入无效，请输入数字选项！")
-    selection_id = group_id[selection_id]
-    global groupid
-    groupid = str(selection_id)
-    print("即将进入检测模式")
+    try:
+        response = requests.get(group_interface, headers=headers, timeout=(5, 10))
+        response.raise_for_status()  # 检查是否有错误状态码
+        # 处理响应数据
+        response = response.json()
+        data = response['data']['group']
+        screen_group = []
+        group_id = []
+        for i in data:
+            screen_group.append(i['name'])
+            group_id.append(i['id'])
+        message = ""
+        for index, value in enumerate(screen_group):
+            message += str(index + 1) + "： " + value + "\n"
+        while True:
+            selection_id = input(f"请选择要监视的屏幕组：\n{message}")
+            try:
+                selection_id = int(selection_id) - 1
+                break
+            except ValueError:
+                print("输入无效，请输入数字选项！")
+        selection_id = group_id[selection_id]
+        global groupid
+        groupid = str(selection_id)
+        print("即将进入检测模式")
+    except requests.Timeout:
+        print("请求超时,程序即将退出")
+        time.sleep(2)
+        sys.exit()
+    except requests.RequestException as e:
+        print(f"请求发生错误: {e}")
+
 
 
 def get_screen_list():
