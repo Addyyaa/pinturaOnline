@@ -21,11 +21,12 @@ groupid = ""
 
 def log_exception(exception):
     # 将异常信息写入文件
-    with open('/log/exception_log.txt', 'w') as f:
-        f.write("Exception Type: {}\n".format(type(exception).__name__))
-        f.write("Exception Value: {}\n".format(exception))
-        f.write("Traceback:\n")
-        traceback.print_exc(file=f)
+    # with open('D:\\exception_log.txt', 'w') as f:
+    #     f.write("Exception Type: {}\n".format(type(exception).__name__))
+    #     f.write("Exception Value: {}\n".format(exception))
+    #     f.write("Traceback:\n")
+    #     traceback.print_exc(file=f)
+    pass
 
 def is_valid_email(email):
     email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
@@ -193,18 +194,24 @@ def login():
             response = requests.post(login_interface, data=data_tmp, headers=headers)
             response.close()
             response = response.json()
+            message = response['message']
+            cookie = response['data']
+            if message == '成功':
+                print('登录成功')
+                return cookie
+            else:
+                print(message)
         except json.decoder.JSONDecodeError:
             log_exception("JSON解码错误")
+            print("JSON解码错误")
+        except requests.exceptions.JSONDecodeError:
+            log_exception("JSON解码错误")
+            log_exception("JSON解码错误")
+            print("JSON解码错误")
         except Exception as e:
             print(e)
 
-        message = response['message']
-        cookie = response['data']
-        if message == '成功':
-            print('登录成功')
-            return cookie
-        else:
-            print(message)
+
 
 
 def get_groupid():
@@ -242,6 +249,10 @@ def get_groupid():
         print("即将进入检测模式")
     except json.decoder.JSONDecodeError:
         log_exception("JSON解码错误")
+        print("JSON解码错误")
+    except requests.exceptions.JSONDecodeError:
+        log_exception("JSON解码错误")
+        print("JSON解码错误")
     except requests.Timeout:
         print("请求超时,程序即将退出")
         time.sleep(2)
@@ -268,8 +279,13 @@ def get_screen_list():
         return offline_screens
     except json.decoder.JSONDecodeError:
         log_exception("JSON解码错误")
+        print("JSON解码错误")
+    except requests.exceptions.JSONDecodeError:
+        log_exception("JSON解码错误")
+        print("JSON解码错误")
     except Exception as e:
         log_exception(e)
+        print(f"请求发生错误: {e}")
 
 
 def check_online():
@@ -278,11 +294,15 @@ def check_online():
     print('\n' * 5, '\033[1;31;40m 按 Ctrl + C 退出程序 \033[m')
     msg = '检测中...'
     while True:
-        sys.stdout.write('\r' + " " * len(msg))
-        sys.stdout.flush()
-        time.sleep(0.5)
-        sys.stdout.write('\r' + msg)
-        sys.stdout.flush()
+        try:
+            sys.stdout.write('\r' + " " * len(msg))
+            sys.stdout.flush()
+            time.sleep(0.5)
+            sys.stdout.write('\r' + msg)
+            sys.stdout.flush()
+        except Exception as e:
+            log_exception(e)
+            print(f"发生错误：{e}，系统即将退出")
         time.sleep(0.5)
         offline_screen_list = get_screen_list()
         if offline_screen_list:
@@ -299,3 +319,6 @@ try:
     check_online()
 except Exception as e:
     log_exception(e)
+    print(f"发生错误：{e}，系统即将退出")
+    time.sleep(2)
+    sys.exit()
