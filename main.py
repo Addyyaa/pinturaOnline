@@ -17,7 +17,13 @@ headers = {
 }
 server = ""
 groupid = ""
-
+body_data = {
+        "account": "",
+        "password": "",
+        "areaCode": "",
+        "loginType": ""
+    }
+login_interface = ""
 
 def log_exception(exception):
     # 将异常信息写入文件
@@ -134,31 +140,26 @@ def check_password(passwd):
 
 
 def login():
-    data = {
-        "account": None,
-        "password": None,
-        "areaCode": None,
-        "loginType": None
-    }
-
+    global body_data
     while True:
         area = input("请选择地区：\n1. 中国-测试环境\n2. 中国-正式环境\n3. 美国-测试环境\n4. 美国-正式环境\n")
         global server
         if area == '1':
             server = '139.224.192.36:8082'
-            data['areaCode'] = '+86'
+            body_data['areaCode'] = '+86'
         elif area == '2':
             server = 'cloud-service.austinelec.com:8080'
-            data['areaCode'] = '+86'
+            body_data['areaCode'] = '+86'
         elif area == '3':
             server = '52.53.201.220:8080'
-            data['areaCode'] = '+1'
+            body_data['areaCode'] = '+1'
         elif area == '4':
             server = '52.53.201.220:8080'
-            data['areaCode'] = '+1'
+            body_data['areaCode'] = '+1'
         else:
             print('地区输入错误,请重新输入！')
             continue
+        global login_interface
         login_interface = 'http://' + server + '/api/v1/account/login'
         while True:
             account = input('请输入账号：')
@@ -166,14 +167,14 @@ def login():
                 account_result = check_account(account)
                 # 邮箱登录
                 if isinstance(account_result, str):
-                    data['account'] = account
-                    data['loginType'] = '3'
-                    data.pop('areaCode')
+                    body_data['account'] = account
+                    body_data['loginType'] = '3'
+                    body_data.pop('areaCode')
                     break
                 # 手机登录
                 elif isinstance(account_result, tuple) and account_result[0] == 'phone':
-                    data['account'] = account_result[1]
-                    data['loginType'] = '2'
+                    body_data['account'] = account_result[1]
+                    body_data['loginType'] = '2'
                     break
                 else:
                     print('账号格式不正确,请重新输入！如果账号为手机号，需要携带区号，如：8612345678901')
@@ -184,12 +185,12 @@ def login():
             passwd = input('请输入密码：')
             result = check_password(passwd)
             if isinstance(result, str):
-                data['password'] = result
+                body_data['password'] = result
                 break
             else:
                 continue
 
-        data_tmp = json.dumps(data)
+        data_tmp = json.dumps(body_data)
         try:
             response = requests.post(login_interface, data=data_tmp, headers=headers)
             response.close()
@@ -267,16 +268,41 @@ def get_screen_list():
         screen_list_interface = 'http://' + server + '/api/v1/host/screen/group/list/relation?screenGroupId=' + groupid
         response = requests.get(screen_list_interface, headers=headers)
         response.close()
-        response = response.json()
-        data = response['data']
-        screens = {}
-        offline_screens = []
-        for i in data:
-            screens[f'{i["screenId"]}'] = i['status']
-        for key, value in screens.items():
-            if value == 2:
-                offline_screens.append(key)
-        return offline_screens
+        try:
+            response.raise_for_status()
+            response = response.json()
+            data = response['data']
+            screens = {}
+            offline_screens = []
+            for i in data:
+                screens[f'{i["screenId"]}'] = i['status']
+            for key, value in screens.items():
+                if value == 2:
+                    offline_screens.append(key)
+            return offline_screens
+        except requests.exceptions.HTTPError as err:
+            global body_data
+            print(f"疑似token失效，错误信息：{err}\n尝试重新登录")
+            try:
+                response = requests.post(login_interface, data=body_data, headers=headers)
+                response.close()
+                response = response.json()
+                message = response['message']
+                cookie = response['data']
+                if message == '成功':
+                    print('登录成功')
+                    return cookie
+                else:
+                    print(message)
+            except json.decoder.JSONDecodeError:
+                log_exception("JSON解码错误")
+                print("JSON解码错误")
+            except requests.exceptions.JSONDecodeError:
+                log_exception("JSON解码错误")
+                log_exception("JSON解码错误")
+                print("JSON解码错误")
+            except Exception as e:
+                print(e)
     except json.decoder.JSONDecodeError:
         log_exception("JSON解码错误")
         print("JSON解码错误")
