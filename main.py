@@ -21,7 +21,7 @@ groupid = ""
 
 def log_exception(exception):
     # 将异常信息写入文件
-    with open('exception_log.txt', 'w') as f:
+    with open('/log/exception_log.txt', 'w') as f:
         f.write("Exception Type: {}\n".format(type(exception).__name__))
         f.write("Exception Value: {}\n".format(exception))
         f.write("Traceback:\n")
@@ -75,6 +75,20 @@ def send_email(subject="Pintura：您的设备离线啦！", message=""):
 
         print('Email sent successfully.')
     except Exception as e:
+        print(f'Error: {e}')
+    except smtplib.SMTPAuthenticationError as e:
+        print(f'Error: {e}')
+    except smtplib.SMTPRecipientsRefused as e:
+        print(f'Error: {e}')
+    except smtplib.SMTPServerDisconnected as e:
+        print(f'Error: {e}')
+    except smtplib.SMTPException as e:
+        print(f'Error: {e}')
+    except smtplib.SMTPSenderRefused as e:
+        print(f'Error: {e}')
+    except smtplib.SMTPDataError as e:
+        print(f'Error: {e}')
+    except smtplib.SMTPConnectError as e:
         print(f'Error: {e}')
 
 def phone_number_format_validation(phone):
@@ -179,6 +193,8 @@ def login():
             response = requests.post(login_interface, data=data_tmp, headers=headers)
             response.close()
             response = response.json()
+        except json.decoder.JSONDecodeError:
+            log_exception("JSON解码错误")
         except Exception as e:
             print(e)
 
@@ -219,10 +235,13 @@ def get_groupid():
                 break
             except ValueError:
                 print("输入无效，请输入数字选项！")
+                continue
         selection_id = group_id[selection_id]
         global groupid
         groupid = str(selection_id)
         print("即将进入检测模式")
+    except json.decoder.JSONDecodeError:
+        log_exception("JSON解码错误")
     except requests.Timeout:
         print("请求超时,程序即将退出")
         time.sleep(2)
@@ -247,6 +266,8 @@ def get_screen_list():
             if value == 2:
                 offline_screens.append(key)
         return offline_screens
+    except json.decoder.JSONDecodeError:
+        log_exception("JSON解码错误")
     except Exception as e:
         log_exception(e)
 
