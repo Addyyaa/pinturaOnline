@@ -26,13 +26,12 @@ body_data = {
 login_interface = ""
 
 def log_exception(exception):
-    # 将异常信息写入文件
-    # with open('D:\\exception_log.txt', 'w') as f:
-    #     f.write("Exception Type: {}\n".format(type(exception).__name__))
-    #     f.write("Exception Value: {}\n".format(exception))
-    #     f.write("Traceback:\n")
-    #     traceback.print_exc(file=f)
-    pass
+    #将异常信息写入文件
+    with open('exception_log.txt', 'w') as f:
+        f.write("Exception Type: {}\n".format(type(exception).__name__))
+        f.write("Exception Value: {}\n".format(exception))
+        f.write("Traceback:\n")
+        traceback.print_exc(file=f)
 
 def is_valid_email(email):
     email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
