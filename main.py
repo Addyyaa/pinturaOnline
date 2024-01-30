@@ -118,11 +118,13 @@ def check_account(account):
     if is_valid_email(account):
         account_type = 'email'
         return account_type
-    elif phone_number := phone_number_format_validation(account):
-        account_type = 'phone'
-        return account_type, phone_number
-    else:
-        return False
+    elif True:
+        phone_number = phone_number_format_validation(account)
+        if phone_number:
+            account_type = 'phone'
+            return account_type, phone_number
+        else:
+            return False
 
 
 def check_password(passwd):
@@ -241,7 +243,7 @@ def get_groupid():
             try:
                 selection_id = int(selection_id) - 1
                 break
-            except ValueError:
+            except (ValueError, IndexError):
                 print("输入无效，请输入数字选项！")
                 continue
         selection_id = group_id[selection_id]
@@ -331,14 +333,24 @@ def check_online():
             print(f"发生错误：{e}，系统即将退出")
         time.sleep(0.5)
         offline_screen_list = get_screen_list()
-        if offline_screen_list:
-            if offline_screen_list and offline_screen_list != last_offline_screens:
-                print('发现离线屏幕：\n', offline_screen_list)
+        back_online = []
+        message1 = False
+        print(f"last_offline_screens：{last_offline_screens}, offline_screen_list：{offline_screen_list}")
+        if offline_screen_list and offline_screen_list != last_offline_screens:
+            for screen in last_offline_screens:
+                if screen not in offline_screen_list:
+                    back_online.append(screen)
+                    message1 = f"<font color='#00FF00'>{back_online}</font> 已上线"
+                    back_online = []
+            print('发现离线屏幕：\n', offline_screen_list)
+            if message1:
+                message = f"发现离线屏幕：\n{offline_screen_list}\n" + message1
+            else:
                 message = f"发现离线屏幕：\n{offline_screen_list}"
-                send_email(message=message)
-                last_offline_screens = offline_screen_list
-        else:
-            last_offline_screens = []
+            send_email(message=message)
+            last_offline_screens = offline_screen_list
+        # else:
+        #     last_offline_screens = []
 
 
 try:
