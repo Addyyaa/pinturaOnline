@@ -242,11 +242,12 @@ def get_groupid():
             selection_id = input(f"请选择要监视的屏幕组：\n{message}")
             try:
                 selection_id = int(selection_id) - 1
+                selection_id = group_id[selection_id]
                 break
             except (ValueError, IndexError):
-                print("输入无效，请输入数字选项！")
+                print("输入无效，请输入数字选项且必须在有效范围内！")
                 continue
-        selection_id = group_id[selection_id]
+
         global groupid
         groupid = str(selection_id)
         print("即将进入检测模式")
